@@ -272,7 +272,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h2 class="anchored" data-anchor-id="distance-to-nearest-shelter">Distance to Nearest Shelter</h2>
 <p>A walkable network was built with Pandana by projecting OSM street nodes/edges to the project CRS, marking shelter POIs, and running Pandana shortest-path queries to compute walking distance from each network node to its nearest shelter. These node-level distances were mapped back to buildings via the nearest network node, producing a per-building “walking distance to nearest shelter” attribute, and a Pandana heatmap visualizes shelter accessibility across the island.</p>
 <p>The walking-distance map shows clear spatial gradients: central shelters are concentrated on the south side of St.&nbsp;Thomas, where nearby buildings have the shortest distances (tens to a few hundred meters), while peripheral areas exceed roughly 2000–3500 m, highlighting accessibility gaps where adding shelter capacity or improving pedestrian connectivity would most reduce isolation.</p>
-<div id="aee3138f" class="cell" data-execution_count="2">
+<div id="b483e085" class="cell" data-execution_count="2">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>

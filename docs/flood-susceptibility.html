@@ -270,7 +270,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h2 class="anchored" data-anchor-id="the-random-forest-model">The Random Forest Model</h2>
 <p>The Random Forest (RF) model was adopted to map flood susceptibility across St.&nbsp;Thomas. The training data, consisting of 14 flood-conditioning features, was standardized through a pipeline and input into an RF classifier, with its performance first assessed using a held-out test set. To improve stability and reduce overfitting, model performance was further evaluated through 5-fold stratified cross-validation using ROC–AUC as the scoring metric. A GridSearchCV procedure was implemented to optimize hyperparameters across a search space including the number of trees (50–150), maximum depth (8–None), and minimum samples required for node splits and leaf nodes. The best-performing configuration—identified through cross-validated AUC—included 100 trees, a maximum depth of 10, a minimum of 5 samples to split a node, and 3 samples per leaf, with class weights balanced to address sample imbalance.</p>
 <p>Using this optimized model, the RF classifier achieved strong predictive performance (accuracy = 0.85; AUC = 0.94). Class-level precision, recall, and F1 scores remained consistently high for both flooded and non-flooded samples, ranging from 0.82 to 0.88. The ROC curve demonstrates robust discrimination across false-positive rates, confirming the model’s reliability. Feature importance rankings indicate that elevation is the dominant predictor, followed by slope, distance to ghuts, tsunami exposure, and forest cover, while remaining land-cover classes contribute smaller but meaningful signals.</p>
-<div id="159e4a76" class="cell" data-execution_count="2">
+<div id="df05dce3" class="cell" data-execution_count="2">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
@@ -301,7 +301,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </div>
-<div id="c0cdda15" class="cell" data-execution_count="3">
+<div id="cb050217" class="cell" data-execution_count="3">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
@@ -349,7 +349,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="the-flood-susceptibility" class="level2">
 <h2 class="anchored" data-anchor-id="the-flood-susceptibility">The Flood Susceptibility</h2>
 <p>With the model validated, the trained RF classifier was applied to the full study area to generate a spatially continuous flood susceptibility map. The flood susceptibility in St Thomas shows a 100 m × 100 m flood susceptibility index ranging from 0.0 (purple, very low) to 1.0 (bright yellow, very high). Values above ~0.8 are concentrated along the coastal fringe, harbors, and embayed shorelines, indicating the most exposed zones. Mid-range values (~0.4–0.7) extend inland along primary drainage corridors. Interior uplands and ridges are dominated by low indices (&lt;0.3), reflecting reduced ponding potential at higher elevations.</p>
-<div id="0186bc31" class="cell" data-execution_count="5">
+<div id="25a8598c" class="cell" data-execution_count="5">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
@@ -380,7 +380,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a><span class="co"># Horizontal colorbar inset (bottom-left)</span></span>
 <span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a>cax <span class="op">=</span> ax.inset_axes([<span class="fl">0.05</span>, <span class="fl">0.08</span>, <span class="fl">0.25</span>, <span class="fl">0.06</span>])  <span class="co"># [x, y, width, height] in axis fraction</span></span>
 <span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a>cbar <span class="op">=</span> fig.colorbar(img, cax<span class="op">=</span>cax, orientation<span class="op">=</span><span class="st">"horizontal"</span>)</span>
-<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a>cbar.ax.set_title(<span class="st">"IF (%)"</span>, fontsize<span class="op">=</span><span class="dv">9</span>, pad<span class="op">=</span><span class="dv">4</span>, color<span class="op">=</span><span class="st">"white"</span>)</span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a>cbar.ax.set_title(<span class="st">"Susceptibility Index"</span>, fontsize<span class="op">=</span><span class="dv">9</span>, pad<span class="op">=</span><span class="dv">4</span>, color<span class="op">=</span><span class="st">"white"</span>)</span>
 <span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a>cbar.outline.set_linewidth(<span class="dv">0</span>)</span>
 <span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a>cbar.ax.tick_params(size<span class="op">=</span><span class="dv">0</span>)</span>
 <span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a>cbar.ax.xaxis.set_tick_params(pad<span class="op">=</span><span class="dv">4</span>, colors<span class="op">=</span><span class="st">"white"</span>)</span>
