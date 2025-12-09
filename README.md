@@ -64,8 +64,8 @@ This project develops a Python-based ML framework integrating:
 | -------------------- | --------------------- | ----------------------- | ---------------------------------- |
 | Flood Hazard Zones   | USVI Open Data Portal | GeoJSON / SHP           | FEMA-based high-risk flood areas   |
 | Tsunami Hazard Zones | USVI Open Data Portal | GeoJSON                 | Coastal inundation risk            |
-| Land Cover           | USVI Open Data Portal | Raster TIFF             | 13-category surface classification |
-| Ghut Networks        | USVI Open Data Portal | SHP                     | Drainage channels                  |
+| Land Cover           | USVI Open Data Portal | GeoJSON                 | 13-category surface classification |
+| Ghut Networks        | USVI Open Data Portal | GeoJSON                 | Drainage channels                  |
 | Building Footprints  | USVI Government       | GeoJSON                 | Residential structures             |
 | Parcel Land Value    | USVI Government       | GeoPackage / SHP        | Land value & ownership             |
 | Road Networks        | OpenStreetMap         | OSM XML / Pandana graph | Street network routing             |
