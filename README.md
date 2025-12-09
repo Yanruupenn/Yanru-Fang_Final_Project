@@ -49,6 +49,7 @@ This project develops a Python-based ML framework integrating: urban flood inven
 ### Data Sources
 - Vectors: Flood zones, tsunami zones, land cover, ghuts, buildings, parcel land value (USVI); roads (OSM).  
 - Rasters: DEM (USGS 3DEP), slope (derived), distance-to-ghut (derived).
+- Large raster files (DEM, slope, ghut distance) exceed GitHub 100MB limit and are not included. These files can be downloaded from USGS and NOAA.
 
 ### Results Summary
 - High/very high risk: southern coast & eastern urban corridor; moderate: inner basins; low: central ridges.  
