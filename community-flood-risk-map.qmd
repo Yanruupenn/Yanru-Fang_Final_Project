@@ -1,0 +1,153 @@
+---
+title: "Community Flood Risk Map"
+---
+## Residential Building Flood susceptibility
+
+Each residential building was assigned a flood-susceptibility score derived from the model-predicted median_suscept value. To facilitate categorical interpretation, these continuous susceptibility scores were discretized into five fixed-interval classes: 0–0.2 (Very Low), 0.2–0.4 (Low), 0.4–0.6 (Moderate), 0.6–0.8 (High), and 0.8–1.0 (Very High). This classification scheme generates a discrete risk label for every residential structure, enabling subsequent analyses to directly compare building-level exposure and communicate flood risk more effectively.
+
+The results show that 43.3% and 27.3% of buildings fall into the “very low” and “low” risk categories, respectively, indicating that most buildings are in areas of low vulnerability. In contrast, the “very high” risk category covers 11.1% of buildings, suggesting these structures may be situated in flood-prone locations.
+
+```{python}
+#| echo: true
+#| code-fold: true
+#| code-summary: "Code"
+#| eval: false
+
+import pandas as pd
+import matplotlib.pyplot as plt
+
+suscept_order = ["Very Low", "Low", "Moderate", "High", "Very High"]
+colors = ["#2ca25f", "#99d8c9", "#fed98e", "#f46d43", "#bd0026"]  # match legend
+
+bld_with_access["suscept_label"] = pd.Categorical(
+    bld_with_access["suscept_label"], categories=suscept_order, ordered=True
+)
+props = bld_with_access["suscept_label"].value_counts(normalize=True).reindex(suscept_order)
+
+fig, ax = plt.subplots(figsize=(6, 4))
+props.plot.bar(ax=ax, color=colors)
+ax.set_ylabel("Proportion")
+ax.set_xlabel("Susceptibility Class")
+ax.set_title("Class Proportions")
+ax.set_ylim(0, 1)
+plt.show()
+```
+<figure style="text-align:center; margin: 0;">
+  <img src="images/classproportion.png"
+       style="width:60%; display:block; margin:auto;" />
+  <figcaption style="margin-top:10px; font-size:0.9rem; color:#555;">
+    Figure 1: Plot of Community Flood Risk Level
+  </figcaption>
+</figure>
+
+## Community Flood Risk Map
+
+The community flood-risk interactive map provides a critical foundation for risk management by translating model outputs into an accessible, spatially explicit decision-support tool. As shown in the flood-susceptibility map, several risk clusters emerge across St. Thomas that align closely with the island’s topography and settlement patterns. High and very high susceptibility points concentrate along the southern coastal corridor from Charlotte Amalie West through Charlotte Amalie East, extending toward Bovoni and the industrial-residential areas near Tutu. Additional hotspots appear along the eastern coastline from Nazareth to Red Hook, where dense shoreline development sits adjacent to steep inland slopes. On the northern side of the island, smaller pockets of elevated risk are observed around Magens Bay, Peterborg, and the surrounding hillside communities, where steep terrain funnels runoff toward coastal properties.
+
+In contrast, the island’s interior ridge, from Caret Bay Estate through John Oley and into the central uplands, is predominantly categorized as very low to low susceptibility, reflecting higher elevations and lower exposure to coastal and drainage-channel flooding. However, several inland depressions near Anna’s Retreat and the downstream valleys feeding into Charlotte Amalie Harbor exhibit moderate to high sensitivity, suggesting vulnerability to stormwater accumulation.
+
+
+```{python}
+#| echo: true
+#| code-fold: true
+#| code-summary: "Code"
+#| eval: false
+
+import geopandas as gpd
+import pandas as pd
+import folium
+
+crs_proj = "EPSG:3857"
+
+# Project working copies
+boundary_3857  = boundary.to_crs(crs_proj)
+buildings_3857 = buildings.to_crs(crs_proj)
+bld_3857       = bld_with_access.to_crs(crs_proj).copy()
+shelters_3857  = shelters.to_crs(crs_proj).copy()
+
+# Map center from boundary centroid (projected -> WGS84)
+ctr_proj = boundary_3857.geometry.centroid
+ctr_wgs = gpd.GeoSeries(ctr_proj, crs=crs_proj).to_crs("EPSG:4326")
+center_lat = ctr_wgs.y.mean()
+center_lon = ctr_wgs.x.mean()
+
+# Web copies (WGS84) for Folium
+boundary_web  = boundary_3857.to_crs("EPSG:4326")
+buildings_web = buildings_3857.to_crs("EPSG:4326")
+bld_web       = bld_3857.to_crs("EPSG:4326").copy()
+shelters_web  = shelters_3857.to_crs("EPSG:4326").copy()
+
+# Susceptibility categories/colors
+suscept_order  = ["Very Low", "Low", "Moderate", "High", "Very High"]
+suscept_colors = ["#2ca25f", "#99d8c9", "#fed98e", "#f46d43", "#bd0026"]
+bld_web["suscept_label"] = pd.Categorical(
+    bld_web["suscept_label"], categories=suscept_order, ordered=True
+)
+
+# Build map
+m = folium.Map(location=[center_lat, center_lon], zoom_start=12, tiles="CartoDB positron")
+
+# Boundary
+boundary_web.explore(
+    name="Boundary",
+    style_kwds={"color": "black", "fillColor": "none", "weight": 2},
+    tiles=None, show=True, popup=False, tooltip=False, m=m,
+)
+
+# Buildings colored by susceptibility 
+bld_web.explore(
+    column="suscept_label",
+    cmap=suscept_colors,
+    categorical=True,
+    legend=True,
+    legend_kwds={"caption": "Flood Susceptibility"},
+    tooltip=["bld_id", "median_suscept", "land_value_per_m2", "dist_to_shelter_m"],
+    popup=["bld_id", "median_suscept", "land_value_per_m2", "dist_to_shelter_m"],
+    name="Buildings (colored)",
+    tiles=None,
+    m=m,
+    marker_kwds={"radius": 3},  
+)
+
+# Shelters with name on hover/click
+shelters_web.explore(
+    name="Shelters",
+    tiles=None,
+    m=m,
+    marker_type="marker",
+    marker_kwds={"icon": folium.Icon(color="red", icon="star")},
+    tooltip=["Name"],   
+    popup=["Name"],  
+)
+
+# Simple shelter legend (red star)
+legend_html = """
+<div style="
+ position: fixed; 
+ bottom: 50px; left: 50px; width: 160px; height: 40px; 
+ background: white; border:2px solid #444; z-index:9999; font-size:14px;
+ padding:6px;">
+<b>Legend</b><br>
+<span style='color:red;'>&#9733;</span> Shelter
+</div>
+"""
+m.get_root().html.add_child(folium.Element(legend_html))
+
+folium.LayerControl().add_to(m)
+
+m
+```
+```{=html}
+<figure style="text-align:center;">
+  <iframe 
+    src="vis/flood_buildings_map.html" 
+    width="100%" 
+    height="600"
+    style="border:none;">
+  </iframe>
+  <figcaption style="margin-top:10px; font-size:0.9em; color:#555;">
+    Figure 2: Community Flood Risk Interactive Map
+  </figcaption>
+</figure>
+```
+

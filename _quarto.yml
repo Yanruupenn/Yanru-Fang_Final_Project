@@ -1,0 +1,84 @@
+project:
+  type: website
+  output-dir: docs
+  resources:
+    - vis/**
+  preview:
+    port: 3333
+    
+execute:
+  warning: false
+  message: false
+
+website:
+  title: "Explore_Floodrisk"
+  page-footer:
+    left: "Yanru Fang,2025"
+    right: "This page is built with ❤️ and [Quarto](https://quarto.org/)."
+
+  sidebar:
+    logo: "images/icon.png"
+    pinned: true
+    align: center
+    tools:
+      - icon: instagram
+        href: https://www.instagram.com/north__is?igsh=MTNsczI5emU1Z2E5Yg%3D%3D&utm_source=qr
+        text: "Instagram"
+      - icon: github
+        href: https://github.com/Yanruupenn
+        text: "GitHub"
+      - icon: linkedin
+        href: https://www.linkedin.com/in/yanru-fang-906864324
+        text: "LinkedIn"
+    style: "docked"
+    search: true
+    collapse-level: 2
+    contents:
+         # Overview
+    - href: index.qmd
+      text: Overview
+      
+         # About Me
+    - href: about.qmd
+      text: About Me
+      
+          # St thomas
+    - href: stthomas.qmd
+      text: Flood Risk in St Thomas
+
+    # Methods and Analysis
+    - section: "Methods and Analysis"
+      contents:
+        - href: urban-flood-inventory.qmd
+          text: Flood Inventory and Feature Selection
+        - href: flood-susceptibility.qmd
+          text: Flood Susceptibility
+        - href: shelter-seeking.qmd
+          text: Shelter Seeking
+
+    # Results 
+    - section: "Results: Risk Management"
+      contents:
+        - href: community-flood-risk-map.qmd
+          text: Community Flood Risk Map
+        - href: exposure-disparities.qmd
+          text: Exposure Disparities
+
+    # Conclusion 
+    - href: conclusion.qmd
+      text: Discussions
+
+    # References 
+    - href: references.qmd
+      text: References
+
+format:
+  html:
+    highlight-style: solarized
+    theme: cosmo
+    css: styles.css
+    code-copy: true
+    code-overflow: wrap
+    toc: true
+    fig-cap-location: bottom
+    fig-align: center

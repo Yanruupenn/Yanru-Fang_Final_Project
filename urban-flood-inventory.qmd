@@ -1,0 +1,255 @@
+---
+title: "Flood Inventory and Feature Selection"
+---
+
+## Flood Inventory Construction
+
+A synthetic flood inventory is built by sampling flooded points inside FEMA/USVI high-risk zones (FLD_ZONE in {VE, AE, AO, A}) and non-flooded points from the residual safe area, further constrained to elevations greater than 5 m according to the DEM. After removing overlaps, 400 flooded and 400 non-flooded points were retained. Each point carries a binary label (1 = flooded, 0 = non-flooded). The resulting map shows flooded and non-flooded points across the island of St. Thomas. This balanced inventory is then split 70/30 for training and testing the machine-learning flood susceptibility model. For detailed code on how the flood inventory was processed, please refer to [this repository](https://github.com/Yanruupenn/Yanru-Fang_Final_Project).
+
+```{python}
+#| echo: false
+#| eval: true
+
+import numpy as np
+import pandas as pd
+import geopandas as gpd
+from pathlib import Path
+from shapely.geometry import Point
+from shapely.ops import unary_union
+import rasterio
+from rasterio.mask import mask
+from rasterio.features import rasterize
+from rasterio.transform import from_origin
+from scipy.ndimage import distance_transform_edt
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+from sklearn.model_selection import train_test_split, cross_val_score, GridSearchCV
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import (
+    accuracy_score,
+    roc_auc_score,
+    roc_curve,
+    classification_report,
+)
+
+np.random.seed(42)
+pd.options.display.max_columns = 200
+
+# Paths
+data_dir = Path("data")
+processed = data_dir / "processed"
+
+# Vectors 
+boundary = gpd.read_file(processed / "st_thomas_boundary.geojson")
+flood_zone = gpd.read_file(processed / "flood_zone_st_thomas_3857.gpkg")
+tsunami_zone = gpd.read_file(processed / "tsunami_st_thomas_3857.gpkg")
+ghuts = gpd.read_file(processed / "ghuts_st_thomas_3857.gpkg")
+landcover = gpd.read_file(processed / "landcover_st_thomas_3857.gpkg")
+buildings = gpd.read_file(processed / "buildings_st_thomas_3857.gpkg")
+
+# Rasters 
+dem_path = processed / "dem_st_thomas_3857.tif"
+slope_path = processed / "slope_degrees_3857.tif"
+ghut_dist_raster = processed / "ghut_distance_m_3857.tif" 
+
+target_crs = "EPSG:3857"
+for gdf in [boundary, flood_zone, tsunami_zone, ghuts, landcover, buildings]:
+    if gdf.crs != target_crs:
+        gdf.to_crs(target_crs, inplace=True)
+        
+# Flood inventory: positive/negative samples
+high_risk_codes = ["VE", "AE","AO","A"]
+flood_field = "FLD_ZONE"  
+high_risk = flood_zone[flood_zone[flood_field].isin(high_risk_codes)].copy()
+high_risk_geom = high_risk.intersection(boundary.unary_union)
+
+def sample_points_in_polygon(gdf, n_points):
+    polys = gdf.geometry.values
+    xmin, ymin, xmax, ymax = unary_union(polys).bounds
+    pts = []
+    while len(pts) < n_points:
+        x = np.random.uniform(xmin, xmax)
+        y = np.random.uniform(ymin, ymax)
+        p = Point(x, y)
+        if any(poly.contains(p) for poly in polys):
+            pts.append(p)
+    return gpd.GeoDataFrame(geometry=pts, crs=gdf.crs)
+
+n_pos = 400
+pos_pts = sample_points_in_polygon(high_risk, n_pos)
+pos_pts["label"] = 1
+
+# Safe area = boundary - flood zone
+safe_area = boundary.overlay(
+    flood_zone,
+    how="difference",
+    keep_geom_type=True 
+)
+
+def sample_points_in_safe_area(gdf, n_points, min_elev=5.0):
+    union = unary_union(gdf.geometry.values)
+    xmin, ymin, xmax, ymax = union.bounds
+    pts = []
+    with rasterio.open(dem_path) as src:
+        for _ in range(n_points * 10):  # safeguard
+            if len(pts) >= n_points:
+                break
+            x = np.random.uniform(xmin, xmax)
+            y = np.random.uniform(ymin, ymax)
+            p = Point(x, y)
+            if union.contains(p):
+                z = list(src.sample([(x, y)]))[0][0]
+                if z > min_elev:
+                    pts.append(p)
+    return gpd.GeoDataFrame(geometry=pts, crs=gdf.crs)
+
+n_neg = n_pos
+neg_pts = sample_points_in_safe_area(safe_area, n_neg, min_elev=5.0)
+neg_pts["label"] = 0
+
+inventory = pd.concat([pos_pts, neg_pts], ignore_index=True)
+
+```
+
+```{python}
+#| fig-cap: "Figure 1: Flood inventory map of St Thomas"
+#| fig-alt: "Figure 1: Flood inventory map of St Thomas"
+#| echo: true
+#| code-fold: true
+#| code-summary: "Code"
+
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
+import numpy as np
+from pathlib import Path
+import geopandas as gpd
+
+images_dir = Path("images")
+images_dir.mkdir(exist_ok=True)
+
+# reuse existing boundary/inventory; load boundary if missing
+try:
+    boundary  # noqa: F821
+except NameError:
+    boundary = gpd.read_file("data/processed/st_thomas_boundary.geojson")
+
+# inventory must already exist in memory (with 'label' column)
+# if not, rerun the sampling step that builds pos_pts/neg_pts and concatenates them
+if "inventory" not in globals():
+    raise RuntimeError("inventory not found; run the sampling step first")
+
+cmap = plt.cm.viridis
+colors = cmap(np.linspace(0, 1, 3))
+neg_color, pos_color = colors[0], colors[2]
+
+pos_gdf = inventory[inventory["label"] == 1]
+neg_gdf = inventory[inventory["label"] == 0]
+
+fig, ax = plt.subplots(figsize=(8, 10))
+fig.patch.set_alpha(0.0)
+ax.set_facecolor("none")
+
+boundary.boundary.plot(ax=ax, color="black", linewidth=1, label="Boundary")
+neg_gdf.plot(ax=ax, color=neg_color, markersize=8, alpha=0.8, label="Non-flooded points")
+pos_gdf.plot(ax=ax, color=pos_color, markersize=8, alpha=0.8, label="Flooded points")
+
+ax.set_axis_off()
+legend_patches = [
+    mpatches.Patch(color=neg_color, label="Non-flooded points"),
+    mpatches.Patch(color=pos_color, label="Flooded points"),
+    mpatches.Patch(facecolor="none", edgecolor="black", label="Boundary"),
+]
+ax.legend(handles=legend_patches, loc="lower left")
+plt.tight_layout()
+```
+
+## Feature Selection
+
+To capture the environmental, hydrologic, and anthropogenic conditions shaping flood susceptibility on St. Thomas, the feature selection process incorporates 14 predictors derived from elevation, terrain, land cover, hazard zones, and proximity indicators. Land cover plays a particularly important role. This land cover dataset includes 13 distinct land cover classes, spanning developed areas (low-, medium-, and high-intensity; and open space), which represent gradations of built environments and impervious surfaces. Natural land cover classes are also well represented, including Forest, Shrubland, and Rangeland, which capture vegetation structure and ecological variation across the island, and additional categories such as water, wetland, cultivated land, barren surfaces, seaside areas, and airport land. Land cover classes were spatially joined to each inventory point using geopandas.sjoin, and one-hot encoded using pandas.get_dummies, allowing categorical surface types to be incorporated into the Random Forest model. These steps ensure that each observation contains a consistent set of hydrologic and land-based predictors representing both natural and built environmental processes. In addition, raster-based variables—such as elevation, slope, and distance to ghuts, were extracted at each sample location using a coordinate, based sampling function (rasterio.sample). The tsunami exposure variable was encoded as a binary indicator by testing whether each point fell within the designated tsunami zone polygon.
+
+Collectively, these features capture the core mechanisms shaping flood behavior on small tropical islands. Areas closer to ghuts are more vulnerable to channel overflow; lower elevations and flatter terrain accumulate surface water; steeper slopes enhance runoff and reduce ponding; and developed land, with extensive impervious surfaces, tends to exhibit higher flood sensitivity compared to vegetated or permeable surfaces. By encoding these relationships numerically, the resulting predictor matrix provides a comprehensive representation of the physical and anthropogenic drivers of flood susceptibility across St. Thomas.
+
+To minimize multicollinearity, Pearson correlation coefficients were computed among all selected predictors. The absolute values of all coefficients remained below 0.8, consistent with prior literature noting that |PCC| > 0.8 may introduce problematic collinearity.
+
+```{python}
+#| echo: false
+#| eval: true
+
+# Feature extraction helpers
+def sample_raster_values(points_gdf, raster_path, col_name):
+    with rasterio.open(raster_path) as src:
+        coords = [(geom.x, geom.y) for geom in points_gdf.geometry]
+        values = [val[0] for val in src.sample(coords)]
+    points_gdf[col_name] = values
+    return points_gdf
+
+# DEM & slope
+inventory = sample_raster_values(inventory, dem_path, "elev")
+inventory = sample_raster_values(inventory, slope_path, "slope")
+
+# Tsunami zone flag
+inventory["in_tsunami"] = inventory.geometry.apply(
+    lambda p: tsunami_zone.contains(p).any()
+).astype(int)
+
+# Ghut distance
+use_raster_dist = True
+if use_raster_dist:
+    inventory = sample_raster_values(inventory, ghut_dist_raster, "dist_ghut")
+else:
+    inventory["dist_ghut"] = inventory.geometry.apply(lambda p: ghuts.distance(p).min())
+
+# Land cover
+lc_field = "class" 
+landcover = landcover.rename(columns={lc_field: "land_class"})
+inventory = gpd.sjoin(inventory, landcover[["land_class", "geometry"]], how="left", predicate="within")
+inventory = pd.get_dummies(inventory, columns=["land_class"], prefix="lc")
+
+```
+```{python}
+#| fig-cap: "Figure 2: Pairwise correlation heatmap"
+#| fig-alt: "Figure 2: Pairwise correlation heatmap"
+#| echo: true
+#| code-fold: true
+#| code-summary: "Code"
+
+import os
+from pathlib import Path
+
+images_dir = Path("images")
+images_dir.mkdir(exist_ok=True)
+
+# ML: Random Forest
+feature_cols = [c for c in inventory.columns 
+                if c not in ["geometry", "label", "index_right",
+                             "rain_annual_mean", "rain_max_month","lc_Rangeland"]]
+X = inventory[feature_cols].values
+y = inventory["label"].values
+
+# Train-test split
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.3, random_state=42, stratify=y
+)
+
+# Convert training set to DataFrame for correlation analysis
+train_df = pd.DataFrame(X_train, columns=feature_cols)
+
+# Plot correlation heatmap WITH numeric values
+plt.figure(figsize=(8, 6))
+sns.heatmap(
+    train_df.corr(),
+    cmap="coolwarm",
+    vmin=-1,
+    vmax=1,
+    annot=True,
+    fmt=".2f",
+    annot_kws={"size": 8}
+)
+plt.xticks(rotation=45, ha="right")
+plt.yticks(rotation=0)
+plt.show()
+```

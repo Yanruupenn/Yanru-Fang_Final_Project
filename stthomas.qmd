@@ -1,0 +1,248 @@
+---
+title: "Flood Risk in St Thomas"
+---
+
+## St Thomas
+
+St. Thomas, one of the major islands of the U.S. Virgin Islands, lies in the eastern Caribbean, where steep volcanic terrain meets a shallow, highly dynamic coastal shelf. Steep topography and coastal concentration of development make small island cities highly sensitive to flooding, and St. Thomas is no exception. 
+
+```{python}
+#| echo: true
+#| code-fold: true
+#| code-summary: "Code"
+#| eval: false
+
+import folium
+import geopandas as gpd
+
+# Load boundary in WGS84
+boundary = gpd.read_file("data/processed/st_thomas_boundary.geojson").to_crs("EPSG:4326")
+
+# Project to a planar CRS (UTM zone 20N) to compute centroid accurately
+boundary_proj = boundary.to_crs(epsg=32620)
+ctr_proj = boundary_proj.geometry.centroid
+
+# Transform centroid back to WGS84 for map center
+ctr_wgs = gpd.GeoSeries(ctr_proj, crs=32620).to_crs(epsg=4326)
+center_lat = ctr_wgs.y.mean()
+center_lon = ctr_wgs.x.mean()
+
+# Build the Folium map
+f = folium.Figure(height=500)
+m = folium.Map(location=[center_lat, center_lon], zoom_start=12, control_scale=True).add_to(f)
+
+# Esri Satellite basemap
+folium.TileLayer(
+    tiles='https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    attr='Esri',
+    name='Esri Satellite',
+    overlay=False,
+    control=True
+).add_to(m)
+
+# Boundary overlay
+folium.GeoJson(
+    boundary.to_json(),
+    name="Boundary",
+    style_function=lambda x: {"color": "#DD6F78", "weight": 2, "fill": False},
+).add_to(m)
+
+# Layer control
+folium.LayerControl().add_to(m)
+
+# Display in notebook
+m
+```
+```{=html}
+<figure style="text-align:center;">
+  <iframe 
+    src="vis/stthomas.html" 
+    width="100%" 
+    height="600"
+    style="border:none;">
+  </iframe>
+  <figcaption style="margin-top:10px; font-size:0.9em; color:#555;">
+    Figure 1: St Thomas, USVI
+  </figcaption>
+</figure>
+```
+
+Flooding has long been a persistent and destructive force across St. Thomas’s residential neighborhoods. Seasonal storms and intense rainfall frequently overwhelm the island’s limited drainage capacity, resulting in rapid water accumulation across hillside settlements and low-lying coastal communities. The scale of past impacts underscores the severity of this hazard: there is a 92% chance of flooding during 4 inches or more of rainfall, 85% of households reported damage during the 2017 hurricanes, and estimated economic losses exceeded $11.25 billion. These recurring disruptions highlight the intertwined roles of environmental exposure, infrastructure limitations, and socioeconomic fragility.
+
+<div style="display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; margin: 20px 0;">
+
+  <!-- left figure -->
+  <figure style="text-align:center; width:48%; margin:0;">
+    <img src="images/Hurricane_Irma.jpg"
+         style="width:100%; display:block; border-radius:4px; margin:auto;" />
+    <figcaption style="margin-top:10px; font-size:0.9rem; color:#555;">
+      Figure 2: Homes Damaged by Hurricane Irma in St Thomas
+    </figcaption>
+  </figure>
+
+  <!-- right figure -->
+  <figure style="text-align:center; width:48%; margin:0;">
+    <img src="images/Flood_Hazard.png"
+         style="width:100%; display:block; border-radius:4px; margin:auto;" />
+    <figcaption style="margin-top:10px; font-size:0.9rem; color:#555;">
+      Figure 3: Flood Hazard in St Thomas
+    </figcaption>
+  </figure>
+
+</div>
+
+In this project, community-level flood risk in St. Thomas is assessed using a Python and machine-learning framework that integrates flood susceptibility with community explosure. By mapping the spatial pattern of flood risk, identifying key environmental drivers, and comparing exposure disparities, such as shelter accessibility and variations in land value, the analysis provides essential insights for understanding flood exposure, locating safe shelters, and planning appropriate insurance coverage.
+
+## Data Sources
+
+This project uses the following datasets, all clipped to the administrative boundary of St. Thomas, USVI. Foundational spatial datasets, including historical flood zones, tsunami hazard zones, land cover, ghut (drainage channel) networks, designated emergency shelters, and administrative boundaries, were obtained from the USVI Open Data Portal (https://usvi-open-data-portal-upenn.hub.arcgis.com/
+). These layers provide essential contextual information on flooding hazards, drainage infrastructure, and critical facilities. Building footprint and parcel data, provided by the local government, contain housing and land value information used to identify residential buildings and analyze form and density in Python.Road networks data were derived using Pandana’s OpenStreetMap interface in Python.
+
+The Digital Elevation Model (DEM) used in this study was sourced from the USGS 3D Elevation Program (https://usgs.entwine.io/
+) and provides approximately 10-meter spatial resolution, suitable for representing the steep terrain of St. Thomas. From this DEM, two terrain indicators were derived. First, slope was calculated using Python (numpy and rasterio) by computing pixel-level elevation gradients, resulting in a continuous slope raster capturing areas prone to rapid runoff. Second, distance to ghuts was generated by rasterizing drainage channels and applying Euclidean distance transforms, producing a 0–1000 m proximity raster that represents hydrologic pathways. These DEM-based derivatives form key environmental predictors for modeling flood susceptibility across the island.
+
+```{python}
+#| echo: true
+#| code-fold: true
+#| code-summary: "Code"
+#| eval: false
+
+!pip install osmnx
+
+import osmnx as ox
+import geopandas as gpd
+from pathlib import Path
+import matplotlib.pyplot as plt
+import math
+from pathlib import Path
+
+import numpy as np
+import matplotlib.pyplot as plt
+import geopandas as gpd
+import rasterio
+from shapely import make_valid
+
+images_dir = Path("images")
+images_dir.mkdir(exist_ok=True)
+
+# Paths
+data_dir = Path("data")
+processed = data_dir / "processed"
+target_crs = "EPSG:3857"
+
+# Load boundary
+boundary = gpd.read_file(processed / "st_thomas_boundary.geojson").to_crs(target_crs)
+boundary_union = boundary.unary_union
+
+# Load and clip shelters
+shelters = gpd.read_file(data_dir / "Shelter.geojson").to_crs(target_crs)
+shelters["geometry"] = shelters.geometry.apply(make_valid)
+shelters = shelters[~shelters.geometry.is_empty]
+shelters = gpd.clip(shelters, boundary_union)
+shelters = shelters[~shelters.geometry.is_empty]
+if "shelter_id" not in shelters.columns:
+    shelters["shelter_id"] = shelters.index.astype(str)
+if "name" not in shelters.columns:
+    shelters["name"] = shelters.index.astype(str)
+
+# Vector layers and titles (including roads)
+vector_layers = [
+    ("flood_zone_st_thomas_3857.gpkg",       "St Thomas_Flood_Zone"),
+    ("tsunami_st_thomas_3857.gpkg",          "St Thomas_Tsunam_Zone"),
+    ("ghuts_st_thomas_3857.gpkg",            "St Thomas_Ghuts"),
+    ("landcover_st_thomas_3857.gpkg",        "St Thomas_LandCover"),
+    ("buildings_st_thomas_3857.gpkg",        "St Thomas_BuildingFootprints"),
+    ("parcel_value_st_thomas_3857.gpkg",     "St Thomas_Parcel_Value"),
+    ("roads_st_thomas_3857.gpkg",            "St Thomas_Road"),
+]
+
+# Raster layers and titles
+raster_layers = [
+    (processed / "dem_st_thomas_3857.tif",          "St Thomas_DEM",              "terrain", None, None),
+    (processed / "slope_degrees_3857.tif",          "St Thomas_Slope (degrees)",  "viridis", 0, 60),
+    (processed / "ghut_distance_m_3857.tif",        "St Thomas_Distance_to_Ghuts","magma",   None, None),
+]
+
+# Total plots and layout (+1 for shelters)
+n_plots = len(vector_layers) + len(raster_layers) + 1
+n_cols = 3
+n_rows = math.ceil(n_plots / n_cols)
+fig, axes = plt.subplots(n_rows, n_cols, figsize=(6 * n_cols, 4.5 * n_rows))
+axes = axes.ravel()
+
+# Plot vectors
+for ax, (fname, title) in zip(axes, vector_layers):
+    gdf = gpd.read_file(processed / fname).to_crs(target_crs)
+    gdf["geometry"] = gdf.geometry.apply(make_valid)
+    gdf = gdf[~gdf.geometry.is_empty]
+    gdf.clip(boundary_union).plot(ax=ax, alpha=0.6, edgecolor="k", linewidth=0.2)
+    boundary.boundary.plot(ax=ax, color="red", linewidth=1)
+    ax.set_title(title, fontsize=11)
+    ax.set_axis_off()
+
+# Plot shelters
+ax_idx = len(vector_layers)
+ax = axes[ax_idx]
+shelters.plot(ax=ax, color="red", markersize=10, label="Shelters")
+boundary.boundary.plot(ax=ax, color="red", linewidth=1)
+ax.set_title("St Thomas_Shelter", fontsize=11)
+ax.set_axis_off()
+
+# Plot rasters (DEM uses percentile stretch)
+for ax, (rpath, title, cmap, vmin, vmax) in zip(axes[ax_idx + 1:], raster_layers):
+    with rasterio.open(rpath) as src:
+        arr = src.read(1).astype("float32")
+        extent = (src.bounds.left, src.bounds.right, src.bounds.bottom, src.bounds.top)
+        nd = src.nodata
+    if nd is not None:
+        arr[arr == nd] = np.nan
+    arr[~np.isfinite(arr)] = np.nan
+
+    # DEM: apply percentile stretch
+    if "DEM" in title:
+        vmin = np.nanpercentile(arr, 1)
+        vmax = np.nanpercentile(arr, 99)
+
+    img = ax.imshow(arr, extent=extent, origin="upper", cmap=cmap, vmin=vmin, vmax=vmax)
+    boundary.boundary.plot(ax=ax, color="red", linewidth=1)
+    ax.set_title(title, fontsize=11)
+    ax.set_axis_off()
+    fig.colorbar(img, ax=ax, shrink=0.6)
+
+# Hide any unused axes
+for ax in axes[n_plots:]:
+    ax.axis("off")
+
+plt.show()
+```
+<figure style="text-align:center; margin: 0;">
+  <img src="images/datasource.png"
+       style="width:100%; display:block; margin:auto;" />
+  <figcaption style="margin-top:10px; font-size:0.9rem; color:#555;">
+    Figure 4: Data Source
+  </figcaption>
+</figure>
+
+## What This Project Plans to Do?
+
+Below is the workflow diagram for this project, accompanied by a concise summary of the major steps:
+
+First, a flood inventory is generated by sampling flooded and non-flooded points across St. Thomas and attaching key environmental predictors such as elevation, slope, distance to ghuts, tsunami exposure, and land cover. These data form the basis for training the flood-susceptibility model.
+
+Next, the dataset is split into training and testing sets, and a Random Forest classifier is applied to estimate flood susceptibility across the island. The model outputs a continuous surface of predicted flood likelihood, supporting community-level risk awareness and hazard communication.
+
+The workflow then evaluates safety protection by assessing shelter accessibility. Using road-network data and shelter locations, walkable paths are modeled to calculate the nearest distance to designated shelters, highlighting disparities in evacuation potential.
+
+Finally, parcel-value information is integrated with flood susceptibility and shelter access to assess risk management needs. This combined analysis identifies communities facing compound vulnerabilities and informs the development of community flood-risk maps and exposure-disparity assessments.
+
+<span style="color:red;">
+**Note:** This section summarizes the workflow; technical procedures and Python implementation details are provided in the Methods and Analysis section.
+</span>
+
+<figure style="text-align:center; margin: 0;">
+  <img src="images/step-wise framework.png"
+       style="width:100%; display:block; margin:auto;" />
+  <figcaption style="margin-top:10px; font-size:0.9rem; color:#555;">
+    Figure 5: Step-wise framework
+  </figcaption>
+</figure>

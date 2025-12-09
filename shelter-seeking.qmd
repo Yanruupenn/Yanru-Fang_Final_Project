@@ -1,0 +1,406 @@
+---
+title: "Shelter Seeking"
+---
+
+## Distance to Nearest Shelter
+
+A walkable network was built with Pandana by projecting OSM street nodes/edges to the project CRS, marking shelter POIs, and running Pandana shortest-path queries to compute walking distance from each network node to its nearest shelter. These node-level distances were mapped back to buildings via the nearest network node, producing a per-building “walking distance to nearest shelter” attribute, and a Pandana heatmap visualizes shelter accessibility across the island.
+
+The walking-distance map shows clear spatial gradients: central shelters are concentrated on the south side of St. Thomas, where nearby buildings have the shortest distances (tens to a few hundred meters), while peripheral areas exceed roughly 2000–3500 m, highlighting accessibility gaps where adding shelter capacity or improving pedestrian connectivity would most reduce isolation.
+
+```{python}
+#| echo: false
+#| include: false 
+#| eval: true
+
+!pip install rasterio
+!pip install rasterstats
+!pip install hvplot
+!pip install folium matplotlib mapclassify
+
+import hvplot.pandas  # registers .hvplot accessor on DataFrame / GeoDataFrame
+import holoviews as hv
+hv.extension("bokeh")  # or "bokeh", "plotly" depending on what you use
+
+import geopandas as gpd
+import pandas as pd
+import numpy as np
+from pathlib import Path
+from shapely import make_valid
+import rasterio
+from rasterstats import zonal_stats  # ensure installed
+import hvplot.pandas  # for interactive maps 
+
+# Paths and base settings
+data_dir = Path("data")
+processed = data_dir / "processed"
+
+buildings_path = processed / "buildings_st_thomas_3857.gpkg"
+parcels_path   = processed / "parcel_value_st_thomas_3857.gpkg"
+suscept_raster = processed / "st_thomas_flood_susceptibility.tif"
+
+boundary = gpd.read_file(processed / "st_thomas_boundary.geojson")
+target_crs = "EPSG:3857"
+
+# Load and clean vector data
+bld = gpd.read_file(buildings_path).to_crs(target_crs)
+parcels = gpd.read_file(parcels_path).to_crs(target_crs)
+
+# Ensure valid geometries and remove empty ones
+bld["geometry"] = bld.geometry.apply(make_valid)
+parcels["geometry"] = parcels.geometry.apply(make_valid)
+bld = bld[~bld.geometry.is_empty]
+parcels = parcels[~parcels.geometry.is_empty]
+
+# Select residential parcels by zoning code
+res_codes = ["R-1", "R-2", "R-3", "R-4", "R-5"]
+parcels_res = parcels[parcels["DPNR_ZONE"].isin(res_codes)].copy()
+
+# Ensure land value field is numeric
+parcels_res["Land_Value"] = pd.to_numeric(parcels_res["Land_Value"], errors="coerce")
+
+# Compute parcel area (m²) and land value per m²
+parcels_res["parcel_area_m2"] = parcels_res.geometry.area  # geometry is parcel footprint after sjoin_nearest
+parcels_res["land_value_per_m2"] = parcels_res["Land_Value"] / parcels_res["parcel_area_m2"]
+
+# Spatial join: attach zoning + land value to buildings
+bld_res = gpd.sjoin(
+    bld,
+    parcels_res[["DPNR_ZONE", "Land_Value", "geometry","land_value_per_m2"]],
+    how="inner",
+    predicate="intersects",
+)
+
+# Remove duplicate footprints caused by intersecting multiple parcels
+bld_res = (
+    bld_res
+    .drop(columns=["index_right"])
+    .drop_duplicates(subset="geometry")
+    .reset_index(drop=True)
+)
+
+# Compute zonal statistics: median flood susceptibility per building
+with rasterio.open(suscept_raster) as src:
+    transform = src.transform
+    nodata = src.nodata
+
+stats = zonal_stats(
+    bld_res,
+    suscept_raster,
+    stats=["median"],
+    affine=transform,
+    nodata=nodata,
+    all_touched=True,
+)
+
+bld_res["median_suscept"] = [s["median"] for s in stats]
+
+# Classification bins/labels (0–1 range)
+bins = [0, 0.2, 0.4, 0.6, 0.8, 1.0]
+labels = ["Very Low", "Low", "Moderate", "High", "Very High"]
+
+# Assign class
+bld_res["suscept_class"] = pd.cut(
+    bld_res["median_suscept"],
+    bins=bins,
+    labels=labels,
+    include_lowest=True
+)
+
+# Remove buildings that fall in raster NoData regions
+bld_res = bld_res.dropna(subset=["median_suscept"])
+
+# Keep only buildings that have valid land value info
+bld_val = bld_res.dropna(subset=["Land_Value"])
+bld_val = bld_val[bld_val["Land_Value"] > 0].copy()
+
+!pip install xlrd
+
+import numpy as np
+import pandas as pd
+import geopandas as gpd
+from pathlib import Path
+from shapely.geometry import Point
+from shapely.ops import unary_union
+import rasterio
+from rasterio.mask import mask
+from rasterio.features import rasterize
+from rasterio.transform import from_origin
+from scipy.ndimage import distance_transform_edt
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+from sklearn.model_selection import train_test_split, cross_val_score, GridSearchCV
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import (
+    accuracy_score,
+    roc_auc_score,
+    roc_curve,
+    classification_report,
+)
+
+np.random.seed(42)
+pd.options.display.max_columns = 200
+
+# Paths
+data_dir = Path("data")
+processed = data_dir / "processed"
+
+# Vectors 
+boundary = gpd.read_file(processed / "st_thomas_boundary.geojson")
+flood_zone = gpd.read_file(processed / "flood_zone_st_thomas_3857.gpkg")
+tsunami_zone = gpd.read_file(processed / "tsunami_st_thomas_3857.gpkg")
+ghuts = gpd.read_file(processed / "ghuts_st_thomas_3857.gpkg")
+landcover = gpd.read_file(processed / "landcover_st_thomas_3857.gpkg")
+buildings = gpd.read_file(processed / "buildings_st_thomas_3857.gpkg")
+
+# Rasters 
+dem_path = processed / "dem_st_thomas_3857.tif"
+slope_path = processed / "slope_degrees_3857.tif"
+ghut_dist_raster = processed / "ghut_distance_m_3857.tif" 
+
+target_crs = "EPSG:3857"
+for gdf in [boundary, flood_zone, tsunami_zone, ghuts, landcover, buildings]:
+    if gdf.crs != target_crs:
+        gdf.to_crs(target_crs, inplace=True)
+        
+import pathlib
+import json
+import numpy as np
+import pandas as pd
+import geopandas as gpd
+import altair as alt
+import osmnx as ox
+
+import geopandas as gpd
+from shapely.validation import make_valid  # if not imported yet
+
+# Load study area boundary and project to analysis CRS
+boundary_fp = processed / "st_thomas_boundary.geojson"
+
+# Read raw boundary (whatever CRS the file is in)
+boundary = gpd.read_file(boundary_fp)
+
+# Project to target_crs (e.g. EPSG:3857)
+boundary = boundary.to_crs(target_crs)
+
+# Fix invalid geometries (self-intersections, slivers, etc.)
+boundary["geometry"] = boundary.geometry.apply(make_valid)
+
+# Drop empty / null geometries
+boundary = boundary[
+    boundary.geometry.notnull() & ~boundary.geometry.is_empty
+]
+
+# Dissolve all parts into a single study-area polygon
+boundary["dissolve_id"] = 1  # same value for all rows
+boundary_dissolved = boundary.dissolve(by="dissolve_id")
+
+# Single Polygon (or MultiPolygon) object, useful for clip / Pandana bbox
+boundary_union = boundary_dissolved.geometry.iloc[0]
+boundary_single = gpd.GeoDataFrame(
+    geometry=[boundary_union],
+    crs=target_crs
+)
+
+from shapely import make_valid
+
+# Load and project
+shelters = gpd.read_file(data_dir / "Shelter.geojson").to_crs(target_crs)
+shelters["geometry"] = shelters.geometry.apply(make_valid)
+shelters = shelters[~shelters.geometry.is_empty]
+
+# Clip to boundary (boundary/ boundary_union already in target_crs)
+shelters = gpd.clip(shelters, boundary_union)
+shelters = shelters[~shelters.geometry.is_empty]
+
+# IDs/names
+if "shelter_id" not in shelters.columns:
+    shelters["shelter_id"] = shelters.index.astype(str)
+if "name" not in shelters.columns:
+    shelters["name"] = shelters.index.astype(str)
+    
+!pip install pandana 
+
+import pandana as pdna
+from pandana.loaders import osm
+import pandas as pd
+import geopandas as gpd
+import matplotlib.pyplot as plt
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+from shapely.geometry import Point
+
+# Build Pandana network from St Thomas bbox
+# Reproject boundary to WGS84 and get bounding box
+boundary_wgs = gpd.GeoSeries([boundary_union], crs=target_crs).to_crs("EPSG:4326")
+lng_min, lat_min, lng_max, lat_max = boundary_wgs.total_bounds
+print("BBox (WGS84):", lat_min, lng_min, lat_max, lng_max)
+
+# Build WALK network with Pandana
+net = osm.pdna_network_from_bbox(
+    lat_min, lng_min, lat_max, lng_max,
+    network_type="walk"
+)
+print("Pandana network nodes:", len(net.nodes_df), "edges:", len(net.edges_df))
+
+# Prepare shelters as POIs in WGS84
+shelters_wgs = shelters.to_crs("EPSG:4326").copy()
+
+if "shelter_id" not in shelters_wgs.columns:
+    shelters_wgs["shelter_id"] = shelters_wgs.index.astype(str)
+if "name" not in shelters_wgs.columns:
+    shelters_wgs["name"] = shelters_wgs["shelter_id"]
+
+max_distance = 4000  # meters
+num_pois = 1         # nearest shelter only
+
+net.set_pois(
+    "shelter",
+    max_distance,
+    num_pois,
+    shelters_wgs.geometry.x.values,
+    shelters_wgs.geometry.y.values
+)
+
+# Compute distance from each network node to nearest shelter
+access = net.nearest_pois(
+    distance=max_distance,
+    category="shelter",
+    num_pois=num_pois
+)
+
+# Merge node coordinates with distances
+nodes = pd.merge(net.nodes_df, access, left_index=True, right_index=True)
+nodes.rename(columns={1: "dist_to_shelter_m"}, inplace=True)
+
+# Make GeoDataFrame in WGS84
+nodes_gdf = gpd.GeoDataFrame(
+    nodes,
+    geometry=gpd.points_from_xy(nodes["x"], nodes["y"]),
+    crs="EPSG:4326"
+)
+
+# Reproject nodes to target_crs (EPSG:3857) for distance calc with buildings
+nodes_gdf_3857 = nodes_gdf.to_crs(target_crs).copy()
+
+# Create centroids for residential buildings (keep all attributes)
+bld_centroids = bld_val.copy()
+bld_centroids["geometry"] = bld_centroids.geometry.centroid
+
+# Ensure building ID exists
+if "bld_id" not in bld_centroids.columns:
+    bld_centroids["bld_id"] = bld_centroids.index.astype(str)
+    
+# Simple nearest-node function 
+def nearest_node_id(point):
+    """
+    Return the ID of the nearest Pandana/network node for a given Point.
+    Both buildings and nodes are in target_crs (e.g., EPSG:3857).
+    This version computes distance to ALL nodes (simple but robust).
+    """
+    if point is None or point.is_empty:
+        return None
+
+    # Distance from this building centroid to all nodes
+    dists = nodes_gdf_3857.geometry.distance(point)
+
+    # If all NaN 
+    if dists.isna().all():
+        return None
+
+    # Return index label of closest node 
+    return dists.idxmin()
+
+# Apply to every centroid
+bld_centroids["nearest_node"] = bld_centroids.geometry.apply(nearest_node_id)
+
+# Attach walking distance from nodes to buildings
+bld_with_access = bld_centroids.merge(
+    nodes_gdf_3857[["dist_to_shelter_m"]],
+    left_on="nearest_node",
+    right_index=True,
+    how="left",
+)
+
+```
+```{python}
+#| fig-cap: "Figure 3: Distance to Nearest Shelter"
+#| fig-alt: "Figure 3: Distance to Nearest Shelter"
+#| echo: true
+#| code-fold: true
+#| code-summary: "Code"
+
+import matplotlib.pyplot as plt
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+import geopandas as gpd
+
+# Align CRS
+boundary_3857 = boundary.to_crs(target_crs)
+shelters_3857 = shelters.to_crs(target_crs).copy()
+
+# Fix boundary and build a union
+boundary_union = boundary_3857.buffer(0).unary_union
+
+# Clip nodes to boundary
+nodes_clipped = nodes_gdf_3857[
+    nodes_gdf_3857.geometry.within(boundary_union)
+].copy()
+
+def plot_walking_distance_to_shelter(
+    nodes_gdf_3857,
+    shelters_3857,
+    column="dist_to_shelter_m",
+    title="Walking Distance to Nearest Shelter"
+):
+    fig, ax = plt.subplots(figsize=(10, 4))
+    divider = make_axes_locatable(ax)
+    cax = divider.append_axes("right", size="5%", pad=0.1)
+
+    # Plot clipped nodes colored by walking distance
+    plot_kwargs = {"s": 10, "alpha": 0.9, "cmap": "viridis_r", "edgecolor": "none"}
+    scatter = nodes_gdf_3857.plot(
+        ax=ax,
+        cax=cax,
+        column=column,
+        legend=True,
+        **plot_kwargs
+    )
+
+    # Add shelters as red stars
+    shelters_3857.plot(ax=ax, color="red", markersize=50, marker="*", label="Shelters")
+
+    # Add boundary
+    boundary_3857.boundary.plot(ax=ax, edgecolor="white", linewidth=1)
+
+    # Formatting
+    fig.patch.set_facecolor("#2b005a")
+    ax.set_facecolor("#2b005a")
+    xmin, ymin, xmax, ymax = boundary_3857.total_bounds
+    ax.set_xlim(xmin, xmax)
+    ax.set_ylim(ymin, ymax)
+    ax.set_axis_off()
+
+    # Legend styling
+    leg = ax.legend()
+    if leg:
+        for txt in leg.get_texts():
+            txt.set_color("white")
+        leg.get_frame().set_facecolor("#2b005a")
+        leg.get_frame().set_edgecolor("white")
+
+    plt.tight_layout()
+    return ax
+
+# Example usage:
+ax = plot_walking_distance_to_shelter(
+    nodes_gdf_3857=nodes_clipped,
+    shelters_3857=shelters_3857,
+    column="dist_to_shelter_m"
+)
+plt.show()
+
+```
+

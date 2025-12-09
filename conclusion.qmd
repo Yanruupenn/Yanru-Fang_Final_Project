@@ -1,0 +1,19 @@
+---
+title: "Discussions"
+---
+
+## Conclusion and Key Insights
+
+Overall, this study demonstrates that flood susceptibility in St. Thomas is primarily driven by terrain-related factors such as elevation, slope, proximity to ghuts, and exposure to coastal hazards. These variables remained consistently important across model configurations, underscoring the dominant influence of topography and drainage pathways on small-island flooding dynamics. The integration of shelter-accessibility analysis reveals additional disparities: several residential communities face long walking distances to designated shelters. Notably, some lower-value housing communities experience a double burden—higher modeled flood susceptibility combined with reduced evacuation accessibility—highlighting uneven spatial distribution of both hazard and protective infrastructure.
+
+## Limitations
+
+Despite its contributions, the study faces several methodological limitations. First, the feature set excludes potentially influential factors such as soil permeability, local drainage infrastructure, and building elevation or structural quality. Their absence may reduce model realism and could also interact with Random Forest behavior, where binary indicator variables (e.g., land-cover dummy variables) sometimes inflate variable importance or increase the risk of overfitting due to repeated splitting on sparse categorical features—an issue noted in machine learning literature concerning tree-based models’ handling of high-dimensional, low-information predictors.
+
+Second, the exposure-disparity assessment is descriptive rather than inferential. Expanding future analyses with spatial statistical techniques, such as clustering indices, geographically weighted accessibility, or income-weighted exposure metrics, would enable a more rigorous understanding of inequities across neighborhoods.
+
+Third, the shelter-accessibility analysis assumes fully walkable and unobstructed routes. In practice, steep slopes, damaged road segments, or high-flow crossings during storm events may affect real evacuation ability. Future work could incorporate slope-adjusted travel times, network impedance under hazard conditions, or blocked-road scenarios to produce more realistic accessibility estimates.
+
+Taken together, these findings underscore the importance of integrating geophysical factors with social and infrastructural dimensions to support more equitable flood-risk management and resilience planning in St. Thomas.
+
+

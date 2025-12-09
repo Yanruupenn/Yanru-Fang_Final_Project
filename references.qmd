@@ -1,0 +1,21 @@
+---
+title: "References"
+---
+
+Bertilsson, L., Wiklund, K., de Moura Tebaldi, I., Rezende, O. M., Veról, A. P., & Miguez, M. G. (2019). Urban flood resilience – A multi-criteria index to integrate flood resilience into urban planning. Journal of Hydrology, 573, 970–982. https://doi.org/10.1016/j.jhydrol.2018.06.052
+
+Humanity Road. (2017). Hurricane Irma: Situation report 2 (TC-2017-000125-DOM) [PDF]. https://reliefweb.int/report/dominican-republic/hurricane-irma-situation-report-2-7-september-2017
+
+Hu, S., Cheng, X., Zhou, D., & others. (2017). GIS-based flood risk assessment in suburban areas: A case study of the Fangshan District, Beijing. Natural Hazards, 87, 1525–1543. https://doi.org/10.1007/s11069-017-2828-0
+
+Nkeki, F. N., Bello, E. I., & Agbaje, I. G. (2022). Flood risk mapping and urban infrastructural susceptibility assessment using a GIS and analytic hierarchical raster fusion approach in the Ona River Basin, Nigeria. International Journal of Disaster Risk Reduction, 77, 103097.
+
+NOAA National Centers for Coastal Ocean Science. (n.d.). Assessing community risk in relation to flood hazard in the U.S. Virgin Islands. https://coastalscience.noaa.gov/project/assessing-community-risk-in-relation-to-flood-hazard-in-the-u-s-virgin-islands/
+
+NOAA National Centers for Coastal Ocean Science. (2024, December 17). Community vulnerability assessment to flood hazard in the U.S. Virgin Islands. https://coastalscience.noaa.gov
+ (Primary contact: chloe.fleming@noaa.gov
+)
+
+Qin, X., Wang, S., Meng, M., Long, H., Zhang, H., & Shi, H. (2025). Enhancing urban resilience through machine learning-supported flood risk assessment: Integrating flood susceptibility with building function vulnerability. npj Urban Sustainability, 5(1), 19.
+
+Seydi, S. T., Kanani-Sadat, Y., Hasanlou, M., Sahraei, R., Chanussot, J., & Amani, M. (2022). Comparison of machine learning algorithms for flood susceptibility mapping. Remote Sensing, 15(1), 192.

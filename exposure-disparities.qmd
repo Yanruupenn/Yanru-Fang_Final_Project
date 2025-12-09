@@ -1,0 +1,90 @@
+---
+title: "Exposure Disparities"
+---
+
+## Disparities Analysis
+
+Grouping residential parcels by land value and analyzing their distance to shelters reveals a distinct pattern of exposure disparity. Lower-value parcels, particularly those below 200 USD per square meter, are located farther from designated shelters, with many exceeding distances of 2,500 to 4,000 meters. This suggests that lower-income communities require longer travel times during emergencies, resulting in higher evacuation costs and slower response capabilities.
+
+A second pattern emerges when considering flood susceptibility. High and very high susceptibility parcels are disproportionately concentrated within the lower land value range. This indicates a spatial overlap between economic disadvantage and hazard exposure—a condition often associated with environmental and climate justice inequities, where the communities least able to mitigate risks are the most exposed to them.
+
+Conversely, parcels of higher land value are generally located closer to shelters, as reflected in the downward trend in the plot. These areas are more likely to benefit from better infrastructure, public services, and emergency facilities, underscoring structural unevenness in the distribution of safety-related resources.
+
+```{python}
+#| echo: true
+#| code-fold: true
+#| code-summary: "Code"
+#| eval: false
+
+import altair as alt
+
+# Palette for susceptibility
+suscept_order = ["Very Low", "Low", "Moderate", "High", "Very High"]
+colors = ["#2ca25f", "#99d8c9", "#fed98e", "#f46d43", "#bd0026"]  # match legend
+
+alt.data_transformers.disable_max_rows()
+
+# Drop rows missing key fields
+df_raw = bld_with_access.dropna(subset=["land_value_per_m2", "dist_to_shelter_m", "suscept_class"]).copy()
+
+# Remove extreme outliers (99th percentile cap)
+upper_cap = df_raw["land_value_per_m2"].quantile(0.99)
+df = df_raw[df_raw["land_value_per_m2"] <= upper_cap]
+
+# Base scatter with custom colors
+base = (
+    alt.Chart(df)
+    .mark_circle(size=60, opacity=0.6)
+    .encode(
+        x=alt.X("land_value_per_m2:Q", scale=alt.Scale(zero=False), title="Land Value per m² (USD)"),
+        y=alt.Y("dist_to_shelter_m:Q", scale=alt.Scale(zero=False), title="Distance to Shelter (m)"),
+        color=alt.Color(
+            "suscept_class:N",
+            title="Flood Susceptibility",
+            scale=alt.Scale(domain=suscept_order, range=colors),
+        ),
+        tooltip=[
+            alt.Tooltip("land_value_per_m2:Q", title="Land Value per m²"),
+            alt.Tooltip("dist_to_shelter_m:Q", title="Distance to Shelter (m)"),
+            alt.Tooltip("suscept_class:N", title="Susceptibility"),
+        ],
+    )
+)
+
+# Regression line 
+trend = (
+    alt.Chart(df)
+    .transform_regression("land_value_per_m2", "dist_to_shelter_m")
+    .mark_line(color="#1f4e63")
+    .encode(
+        x=alt.X("land_value_per_m2:Q", scale=alt.Scale(zero=False)),
+        y=alt.Y("dist_to_shelter_m:Q", scale=alt.Scale(zero=False)),
+    )
+)
+
+chart = (
+    (base + trend)
+    .properties(
+        width=600,
+        height=400,
+    )
+    .interactive()
+)
+
+chart
+```
+```{=html}
+<figure style="text-align:center;">
+  <iframe 
+    src="vis/landvalue_shelter_scatter.html" 
+    width="100%" 
+    height="600"
+    style="border:none;">
+  </iframe>
+  <figcaption style="margin-top:10px; font-size:0.9em; color:#555;">
+    Figure 1: Land Value per m² vs. Distance to Shelter
+  </figcaption>
+</figure>
+```
+
+

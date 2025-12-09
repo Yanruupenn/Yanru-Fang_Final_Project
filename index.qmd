@@ -1,0 +1,9 @@
+---
+title: "Exploring the Flood Risk in St. Thomas"
+subtitle: "Using susceptibility, shelter access, and land value to assess community flood risk"
+---
+![](images/overview.png)
+
+## Overview
+
+Steep topography and coastal concentration of development make small island cities highly sensitive to flooding, and St. Thomas in the U.S. Virgin Islands is no exception. Seasonal storms, intense rainfall, and limited drainage capacity amplify water accumulation across hillside neighborhoods and low-lying coastal communities. In this project, community-level flood risk in St. Thomas is assessed using a Python and machine-learning framework that integrates flood susceptibility with indicators of community exposure. By mapping the spatial pattern of flood exposure, identifying key environmental drivers, and comparing socio-spatial disparities, such as shelter accessibility and variations in land value, the analysis provides essential insights for understanding flood exposure, locating safe shelters, and planning appropriate insurance coverage.
