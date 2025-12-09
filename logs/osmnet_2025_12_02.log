@@ -1,0 +1,68 @@
+2025-12-02 17:23:02,609 INFO osmnet Requesting network data within bounding box from Overpass API in 1 request(s)
+2025-12-02 17:23:02,609 INFO osmnet Posting to http://www.overpass-api.de/api/interpreter with timeout=180, "{'data': '[out:json][timeout:180];(way["highway"]["highway"!~"motor|proposed|construction|abandoned|platform|raceway"]["foot"!~"no"]["pedestrians"!~"no"](18.30242840,-65.04212880,18.38333420,-64.83178480);>;);out;'}"
+2025-12-02 17:23:05,342 INFO osmnet Downloaded 3,672.5KB from www.overpass-api.de in 2.73 seconds
+2025-12-02 17:23:05,411 INFO osmnet Downloaded OSM network data within bounding box from Overpass API in 1 request(s) and 2.80 seconds
+2025-12-02 17:23:05,746 INFO osmnet Returning OSM data with 31,129 nodes and 3,571 ways...
+2025-12-02 17:23:07,565 INFO osmnet Edge node pairs completed. Took 1.82 seconds
+2025-12-02 17:23:07,584 INFO osmnet Returning processed graph with 3,774 nodes and 4,605 edges...
+2025-12-02 17:23:07,584 INFO osmnet Completed OSM data download and Pandana node and edge table creation in 4.99 seconds
+2025-12-02 22:20:22,277 INFO osmnet Requesting network data within bounding box from Overpass API in 1 request(s)
+2025-12-02 22:20:22,277 INFO osmnet Posting to http://www.overpass-api.de/api/interpreter with timeout=180, "{'data': '[out:json][timeout:180];(way["highway"]["highway"!~"motor|proposed|construction|abandoned|platform|raceway"]["foot"!~"no"]["pedestrians"!~"no"](18.30242840,-65.04212880,18.38333420,-64.83178480);>;);out;'}"
+2025-12-02 22:20:23,341 INFO osmnet Downloaded 3,672.5KB from www.overpass-api.de in 1.06 seconds
+2025-12-02 22:20:23,413 INFO osmnet Downloaded OSM network data within bounding box from Overpass API in 1 request(s) and 1.14 seconds
+2025-12-02 22:20:23,793 INFO osmnet Returning OSM data with 31,129 nodes and 3,571 ways...
+2025-12-02 22:20:26,021 INFO osmnet Edge node pairs completed. Took 2.23 seconds
+2025-12-02 22:20:26,026 INFO osmnet Returning processed graph with 3,774 nodes and 4,605 edges...
+2025-12-02 22:20:26,026 INFO osmnet Completed OSM data download and Pandana node and edge table creation in 3.77 seconds
+2025-12-02 23:45:36,642 INFO osmnet Requesting network data within bounding box from Overpass API in 1 request(s)
+2025-12-02 23:45:36,642 INFO osmnet Posting to http://www.overpass-api.de/api/interpreter with timeout=180, "{'data': '[out:json][timeout:180];(way["highway"]["highway"!~"motor|proposed|construction|abandoned|platform|raceway"]["foot"!~"no"]["pedestrians"!~"no"](18.30242840,-65.04212880,18.38333420,-64.83178480);>;);out;'}"
+2025-12-02 23:45:45,320 INFO osmnet Downloaded 0.7KB from www.overpass-api.de in 8.68 seconds
+2025-12-02 23:45:45,899 ERROR osmnet Unrecognized server status: "Rate limit: 4"
+2025-12-02 23:45:45,899 WARNING osmnet Server at www.overpass-api.de returned status code 504 and no JSON data. Re-trying request in 10.00 seconds.
+2025-12-02 23:45:55,911 INFO osmnet Posting to http://www.overpass-api.de/api/interpreter with timeout=180, "{'data': '[out:json][timeout:180];(way["highway"]["highway"!~"motor|proposed|construction|abandoned|platform|raceway"]["foot"!~"no"]["pedestrians"!~"no"](18.30242840,-65.04212880,18.38333420,-64.83178480);>;);out;'}"
+2025-12-02 23:46:02,030 INFO osmnet Downloaded 0.7KB from www.overpass-api.de in 6.12 seconds
+2025-12-02 23:46:02,301 ERROR osmnet Unrecognized server status: "Rate limit: 4"
+2025-12-02 23:46:02,301 WARNING osmnet Server at www.overpass-api.de returned status code 504 and no JSON data. Re-trying request in 10.00 seconds.
+2025-12-02 23:46:12,303 INFO osmnet Posting to http://www.overpass-api.de/api/interpreter with timeout=180, "{'data': '[out:json][timeout:180];(way["highway"]["highway"!~"motor|proposed|construction|abandoned|platform|raceway"]["foot"!~"no"]["pedestrians"!~"no"](18.30242840,-65.04212880,18.38333420,-64.83178480);>;);out;'}"
+2025-12-02 23:46:18,140 INFO osmnet Downloaded 0.7KB from www.overpass-api.de in 5.84 seconds
+2025-12-02 23:46:18,397 ERROR osmnet Unrecognized server status: "Rate limit: 4"
+2025-12-02 23:46:18,398 WARNING osmnet Server at www.overpass-api.de returned status code 504 and no JSON data. Re-trying request in 10.00 seconds.
+2025-12-02 23:46:28,410 INFO osmnet Posting to http://www.overpass-api.de/api/interpreter with timeout=180, "{'data': '[out:json][timeout:180];(way["highway"]["highway"!~"motor|proposed|construction|abandoned|platform|raceway"]["foot"!~"no"]["pedestrians"!~"no"](18.30242840,-65.04212880,18.38333420,-64.83178480);>;);out;'}"
+2025-12-02 23:46:33,587 INFO osmnet Downloaded 0.7KB from www.overpass-api.de in 5.18 seconds
+2025-12-02 23:46:33,856 ERROR osmnet Unrecognized server status: "Rate limit: 4"
+2025-12-02 23:46:33,856 WARNING osmnet Server at www.overpass-api.de returned status code 504 and no JSON data. Re-trying request in 10.00 seconds.
+2025-12-02 23:46:43,863 INFO osmnet Posting to http://www.overpass-api.de/api/interpreter with timeout=180, "{'data': '[out:json][timeout:180];(way["highway"]["highway"!~"motor|proposed|construction|abandoned|platform|raceway"]["foot"!~"no"]["pedestrians"!~"no"](18.30242840,-65.04212880,18.38333420,-64.83178480);>;);out;'}"
+2025-12-02 23:46:50,587 INFO osmnet Downloaded 0.7KB from www.overpass-api.de in 6.72 seconds
+2025-12-02 23:46:50,841 ERROR osmnet Unrecognized server status: "Rate limit: 4"
+2025-12-02 23:46:50,842 WARNING osmnet Server at www.overpass-api.de returned status code 504 and no JSON data. Re-trying request in 10.00 seconds.
+2025-12-02 23:47:00,845 INFO osmnet Posting to http://www.overpass-api.de/api/interpreter with timeout=180, "{'data': '[out:json][timeout:180];(way["highway"]["highway"!~"motor|proposed|construction|abandoned|platform|raceway"]["foot"!~"no"]["pedestrians"!~"no"](18.30242840,-65.04212880,18.38333420,-64.83178480);>;);out;'}"
+2025-12-02 23:47:06,373 INFO osmnet Downloaded 0.7KB from www.overpass-api.de in 5.53 seconds
+2025-12-02 23:47:06,665 ERROR osmnet Unrecognized server status: "Rate limit: 4"
+2025-12-02 23:47:06,666 WARNING osmnet Server at www.overpass-api.de returned status code 504 and no JSON data. Re-trying request in 10.00 seconds.
+2025-12-02 23:47:16,671 INFO osmnet Posting to http://www.overpass-api.de/api/interpreter with timeout=180, "{'data': '[out:json][timeout:180];(way["highway"]["highway"!~"motor|proposed|construction|abandoned|platform|raceway"]["foot"!~"no"]["pedestrians"!~"no"](18.30242840,-65.04212880,18.38333420,-64.83178480);>;);out;'}"
+2025-12-02 23:47:22,532 INFO osmnet Downloaded 0.7KB from www.overpass-api.de in 5.86 seconds
+2025-12-02 23:47:22,791 ERROR osmnet Unrecognized server status: "Rate limit: 4"
+2025-12-02 23:47:22,791 WARNING osmnet Server at www.overpass-api.de returned status code 504 and no JSON data. Re-trying request in 10.00 seconds.
+2025-12-02 23:47:32,800 INFO osmnet Posting to http://www.overpass-api.de/api/interpreter with timeout=180, "{'data': '[out:json][timeout:180];(way["highway"]["highway"!~"motor|proposed|construction|abandoned|platform|raceway"]["foot"!~"no"]["pedestrians"!~"no"](18.30242840,-65.04212880,18.38333420,-64.83178480);>;);out;'}"
+2025-12-02 23:47:38,327 INFO osmnet Downloaded 0.7KB from www.overpass-api.de in 5.53 seconds
+2025-12-02 23:47:38,604 ERROR osmnet Unrecognized server status: "Rate limit: 4"
+2025-12-02 23:47:38,605 WARNING osmnet Server at www.overpass-api.de returned status code 504 and no JSON data. Re-trying request in 10.00 seconds.
+2025-12-02 23:47:48,611 INFO osmnet Posting to http://www.overpass-api.de/api/interpreter with timeout=180, "{'data': '[out:json][timeout:180];(way["highway"]["highway"!~"motor|proposed|construction|abandoned|platform|raceway"]["foot"!~"no"]["pedestrians"!~"no"](18.30242840,-65.04212880,18.38333420,-64.83178480);>;);out;'}"
+2025-12-02 23:47:54,391 INFO osmnet Downloaded 0.7KB from www.overpass-api.de in 5.78 seconds
+2025-12-02 23:47:54,658 ERROR osmnet Unrecognized server status: "Rate limit: 4"
+2025-12-02 23:47:54,659 WARNING osmnet Server at www.overpass-api.de returned status code 504 and no JSON data. Re-trying request in 10.00 seconds.
+2025-12-02 23:48:04,672 INFO osmnet Posting to http://www.overpass-api.de/api/interpreter with timeout=180, "{'data': '[out:json][timeout:180];(way["highway"]["highway"!~"motor|proposed|construction|abandoned|platform|raceway"]["foot"!~"no"]["pedestrians"!~"no"](18.30242840,-65.04212880,18.38333420,-64.83178480);>;);out;'}"
+2025-12-02 23:48:09,582 INFO osmnet Downloaded 0.7KB from www.overpass-api.de in 4.91 seconds
+2025-12-02 23:48:09,864 ERROR osmnet Unrecognized server status: "Rate limit: 4"
+2025-12-02 23:48:09,864 WARNING osmnet Server at www.overpass-api.de returned status code 504 and no JSON data. Re-trying request in 10.00 seconds.
+2025-12-02 23:48:19,870 INFO osmnet Posting to http://www.overpass-api.de/api/interpreter with timeout=180, "{'data': '[out:json][timeout:180];(way["highway"]["highway"!~"motor|proposed|construction|abandoned|platform|raceway"]["foot"!~"no"]["pedestrians"!~"no"](18.30242840,-65.04212880,18.38333420,-64.83178480);>;);out;'}"
+2025-12-02 23:48:25,661 INFO osmnet Downloaded 0.7KB from www.overpass-api.de in 5.79 seconds
+2025-12-02 23:48:25,927 ERROR osmnet Unrecognized server status: "Rate limit: 4"
+2025-12-02 23:48:25,927 WARNING osmnet Server at www.overpass-api.de returned status code 504 and no JSON data. Re-trying request in 10.00 seconds.
+2025-12-02 23:48:35,939 INFO osmnet Posting to http://www.overpass-api.de/api/interpreter with timeout=180, "{'data': '[out:json][timeout:180];(way["highway"]["highway"!~"motor|proposed|construction|abandoned|platform|raceway"]["foot"!~"no"]["pedestrians"!~"no"](18.30242840,-65.04212880,18.38333420,-64.83178480);>;);out;'}"
+2025-12-02 23:48:44,770 INFO osmnet Downloaded 3,672.5KB from www.overpass-api.de in 8.83 seconds
+2025-12-02 23:48:44,839 INFO osmnet Downloaded OSM network data within bounding box from Overpass API in 1 request(s) and 188.20 seconds
+2025-12-02 23:48:45,180 INFO osmnet Returning OSM data with 31,129 nodes and 3,571 ways...
+2025-12-02 23:48:47,063 INFO osmnet Edge node pairs completed. Took 1.88 seconds
+2025-12-02 23:48:47,068 INFO osmnet Returning processed graph with 3,774 nodes and 4,605 edges...
+2025-12-02 23:48:47,068 INFO osmnet Completed OSM data download and Pandana node and edge table creation in 190.45 seconds
