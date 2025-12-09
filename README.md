@@ -84,8 +84,8 @@ This project develops a Python-based ML framework integrating:
 
 ### Build Locally
 - Install Quarto: https://quarto.org/docs/get-started/  
-- `git clone https://github.com/Yanruupenn/Yanru-Fang_Final_Project.git`  
-- `quarto render` (outputs to /docs for GitHub Pages)
+- Git clone https://github.com/Yanruupenn/Yanru-Fang_Final_Project.git`  
+- Quarto render: outputs to /docs for GitHub Pages
 
 ### Author
 Yanru Fang — Master of City & Regional Planning, UPenn  
